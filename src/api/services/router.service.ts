@@ -13,7 +13,7 @@ export class RouterService {
       const routerIp = config.router.ipAddress
 
       const response = await axios.get(
-        `https://${routerIp}${config.router.statusEndpoint}`,
+        `http://${routerIp}${config.router.statusEndpoint}`,
         {
           headers: {
             Authorization: `Bearer ${token}`

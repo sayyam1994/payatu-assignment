@@ -20,11 +20,26 @@ describe('RouterService', () => {
   describe('getRouterStatus', () => {
     it('should return router status when API call is successful', async () => {
       const mockResponseData = {
-        model: 'RouterModel123',
-        firmwareVersion: '1.0.0',
-        macAddress: 'AA:BB:CC:DD:EE:FF',
-        serialNumber: 'SN123456789',
-        uptime: '48 hours'
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
       }
 
       mockedAxios.get.mockResolvedValueOnce({ data: mockResponseData })
@@ -35,16 +50,52 @@ describe('RouterService', () => {
         `http://${config.router.ipAddress}${config.router.statusEndpoint}`,
         { headers: { Authorization: `Bearer mock-token` } }
       )
-      expect(result).toEqual(mockResponseData)
+      expect(result).toEqual({
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
+      })
     })
 
     it('should retry when receiving 401 unauthorized error', async () => {
       const mockResponseData = {
-        model: 'RouterModel123',
-        firmwareVersion: '1.0.0',
-        macAddress: 'AA:BB:CC:DD:EE:FF',
-        serialNumber: 'SN123456789',
-        uptime: '48 hours'
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
       }
 
       const axiosError = new Error('Unauthorized')
@@ -60,7 +111,28 @@ describe('RouterService', () => {
 
       expect(RouterAuth.resetAuthToken).toHaveBeenCalled()
       expect(mockedAxios.get).toHaveBeenCalledTimes(2)
-      expect(result).toEqual(mockResponseData)
+      expect(result).toEqual({
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
+      })
     })
 
     it('should throw error when API call returns no data', async () => {
@@ -103,14 +175,81 @@ describe('RouterService', () => {
     })
   })
 
+  describe('getWifiStatus', () => {
+    it('should return wifi enabled status from router status', async () => {
+      const mockRouterStatus = {
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
+      }
+
+      jest
+        .spyOn(RouterService, 'getRouterStatus')
+        .mockResolvedValueOnce(mockRouterStatus)
+
+      const result = await RouterService.getWifiStatus()
+
+      expect(result).toBe(true)
+    })
+
+    it('should throw error when getRouterStatus fails', async () => {
+      const error = new Error('Failed to get router status')
+      jest.spyOn(RouterService, 'getRouterStatus').mockRejectedValueOnce(error)
+
+      await expect(RouterService.getWifiStatus()).rejects.toThrow(
+        'Failed to get WiFi status: Failed to get router status'
+      )
+    })
+
+    it('should handle unknown errors', async () => {
+      jest
+        .spyOn(RouterService, 'getRouterStatus')
+        .mockRejectedValueOnce('Unknown error')
+
+      await expect(RouterService.getWifiStatus()).rejects.toThrow(
+        'Failed to get WiFi status: Unknown error'
+      )
+    })
+  })
+
   describe('enableWifi', () => {
+    it('should return success message when WiFi is already enabled', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(true)
+
+      const result = await RouterService.enableWifi()
+
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        success: true,
+        message: 'WiFi is already enabled'
+      })
+    })
+
     it('should enable WiFi when API call is successful', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(false)
       mockedAxios.post.mockResolvedValueOnce({ data: { success: true } })
 
       const result = await RouterService.enableWifi()
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        `http://${config.router.ipAddress}${config.router.wifiEndpoint}/enable`,
+        `http://${config.router.ipAddress}${config.router.wifiEndpoint}`,
         {},
         { headers: { Authorization: `Bearer mock-token` } }
       )
@@ -121,6 +260,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with standard error', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(false)
       const error = new Error('Failed to enable WiFi')
       mockedAxios.post.mockRejectedValueOnce(error)
 
@@ -130,6 +270,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with unknown error', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(false)
       mockedAxios.post.mockRejectedValueOnce('Unknown error')
 
       await expect(RouterService.enableWifi()).rejects.toThrow(
@@ -139,13 +280,26 @@ describe('RouterService', () => {
   })
 
   describe('disableWifi', () => {
+    it('should return success message when WiFi is already disabled', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(false)
+
+      const result = await RouterService.disableWifi()
+
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        success: true,
+        message: 'WiFi is already disabled'
+      })
+    })
+
     it('should disable WiFi when API call is successful', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(true)
       mockedAxios.post.mockResolvedValueOnce({ data: { success: true } })
 
       const result = await RouterService.disableWifi()
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        `http://${config.router.ipAddress}${config.router.wifiEndpoint}/disable`,
+        `http://${config.router.ipAddress}${config.router.wifiEndpoint}`,
         {},
         { headers: { Authorization: `Bearer mock-token` } }
       )
@@ -156,6 +310,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with standard error', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(true)
       const error = new Error('Failed to disable WiFi')
       mockedAxios.post.mockRejectedValueOnce(error)
 
@@ -165,6 +320,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with unknown error', async () => {
+      jest.spyOn(RouterService, 'getWifiStatus').mockResolvedValueOnce(true)
       mockedAxios.post.mockRejectedValueOnce('Unknown error')
 
       await expect(RouterService.disableWifi()).rejects.toThrow(
@@ -173,14 +329,83 @@ describe('RouterService', () => {
     })
   })
 
+  describe('getFirewallStatus', () => {
+    it('should return firewall enabled status from router status', async () => {
+      const mockRouterStatus = {
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
+      }
+
+      jest
+        .spyOn(RouterService, 'getRouterStatus')
+        .mockResolvedValueOnce(mockRouterStatus)
+
+      const result = await RouterService.getFirewallStatus()
+
+      expect(result).toBe(true)
+    })
+
+    it('should throw error when getRouterStatus fails', async () => {
+      const error = new Error('Failed to get router status')
+      jest.spyOn(RouterService, 'getRouterStatus').mockRejectedValueOnce(error)
+
+      await expect(RouterService.getFirewallStatus()).rejects.toThrow(
+        'Failed to get firewall status: Failed to get router status'
+      )
+    })
+
+    it('should handle unknown errors', async () => {
+      jest
+        .spyOn(RouterService, 'getRouterStatus')
+        .mockRejectedValueOnce('Unknown error')
+
+      await expect(RouterService.getFirewallStatus()).rejects.toThrow(
+        'Failed to get firewall status: Unknown error'
+      )
+    })
+  })
+
   describe('enableFirewall', () => {
+    it('should return success message when Firewall is already enabled', async () => {
+      jest.spyOn(RouterService, 'getFirewallStatus').mockResolvedValueOnce(true)
+
+      const result = await RouterService.enableFirewall()
+
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        success: true,
+        message: 'Firewall is already enabled'
+      })
+    })
+
     it('should enable firewall when API call is successful', async () => {
+      jest
+        .spyOn(RouterService, 'getFirewallStatus')
+        .mockResolvedValueOnce(false)
       mockedAxios.post.mockResolvedValueOnce({ data: { success: true } })
 
       const result = await RouterService.enableFirewall()
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        `http://${config.router.ipAddress}${config.router.firewallEndpoint}/enable`,
+        `http://${config.router.ipAddress}${config.router.firewallEndpoint}`,
         {},
         { headers: { Authorization: `Bearer mock-token` } }
       )
@@ -191,6 +416,9 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with standard error', async () => {
+      jest
+        .spyOn(RouterService, 'getFirewallStatus')
+        .mockResolvedValueOnce(false)
       const error = new Error('Failed to enable firewall')
       mockedAxios.post.mockRejectedValueOnce(error)
 
@@ -200,6 +428,9 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with unknown error', async () => {
+      jest
+        .spyOn(RouterService, 'getFirewallStatus')
+        .mockResolvedValueOnce(false)
       mockedAxios.post.mockRejectedValueOnce('Unknown error')
 
       await expect(RouterService.enableFirewall()).rejects.toThrow(
@@ -209,13 +440,28 @@ describe('RouterService', () => {
   })
 
   describe('disableFirewall', () => {
+    it('should return success message when Firewall is already disabled', async () => {
+      jest
+        .spyOn(RouterService, 'getFirewallStatus')
+        .mockResolvedValueOnce(false)
+
+      const result = await RouterService.disableFirewall()
+
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result).toEqual({
+        success: true,
+        message: 'Firewall is already disabled'
+      })
+    })
+
     it('should disable firewall when API call is successful', async () => {
+      jest.spyOn(RouterService, 'getFirewallStatus').mockResolvedValueOnce(true)
       mockedAxios.post.mockResolvedValueOnce({ data: { success: true } })
 
       const result = await RouterService.disableFirewall()
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        `http://${config.router.ipAddress}${config.router.firewallEndpoint}/disable`,
+        `http://${config.router.ipAddress}${config.router.firewallEndpoint}`,
         {},
         { headers: { Authorization: `Bearer mock-token` } }
       )
@@ -226,6 +472,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with standard error', async () => {
+      jest.spyOn(RouterService, 'getFirewallStatus').mockResolvedValueOnce(true)
       const error = new Error('Failed to disable firewall')
       mockedAxios.post.mockRejectedValueOnce(error)
 
@@ -235,6 +482,7 @@ describe('RouterService', () => {
     })
 
     it('should throw error when API call fails with unknown error', async () => {
+      jest.spyOn(RouterService, 'getFirewallStatus').mockResolvedValueOnce(true)
       mockedAxios.post.mockRejectedValueOnce('Unknown error')
 
       await expect(RouterService.disableFirewall()).rejects.toThrow(
@@ -251,7 +499,7 @@ describe('RouterService', () => {
       const result = await RouterService.changePassword(newPassword)
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        `http://${config.router.ipAddress}${config.router.passwordEndpoint}/change`,
+        `http://${config.router.ipAddress}${config.router.passwordEndpoint}`,
         { newPassword },
         { headers: { Authorization: `Bearer mock-token` } }
       )
@@ -262,9 +510,42 @@ describe('RouterService', () => {
       })
     })
 
+    it('should throw error when API call fails with Axios error containing response data message', async () => {
+      const axiosError = new Error('Network error') as any
+      axiosError.isAxiosError = true
+      axiosError.response = {
+        data: { message: 'Password format invalid' }
+      }
+
+      mockedAxios.post.mockRejectedValueOnce(axiosError)
+      jest.spyOn(axios, 'isAxiosError').mockReturnValue(true)
+
+      const newPassword = 'new-secure-password'
+
+      await expect(RouterService.changePassword(newPassword)).rejects.toThrow(
+        'Failed to change password: Password format invalid'
+      )
+    })
+
+    it('should throw error when API call fails with regular Axios error', async () => {
+      const axiosError = new Error('Network error') as any
+      axiosError.isAxiosError = true
+
+      mockedAxios.post.mockRejectedValueOnce(axiosError)
+      jest.spyOn(axios, 'isAxiosError').mockReturnValue(true)
+
+      const newPassword = 'new-secure-password'
+
+      await expect(RouterService.changePassword(newPassword)).rejects.toThrow(
+        'Failed to change password: Network error'
+      )
+    })
+
     it('should throw error when API call fails with standard error', async () => {
       const error = new Error('Failed to change password')
       mockedAxios.post.mockRejectedValueOnce(error)
+      jest.spyOn(axios, 'isAxiosError').mockReturnValue(false)
+
       const newPassword = 'new-secure-password'
 
       await expect(RouterService.changePassword(newPassword)).rejects.toThrow(
@@ -274,6 +555,8 @@ describe('RouterService', () => {
 
     it('should throw error when API call fails with unknown error', async () => {
       mockedAxios.post.mockRejectedValueOnce('Unknown error')
+      jest.spyOn(axios, 'isAxiosError').mockReturnValue(false)
+
       const newPassword = 'new-secure-password'
 
       await expect(RouterService.changePassword(newPassword)).rejects.toThrow(

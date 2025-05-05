@@ -76,11 +76,48 @@ src/
 
   ```json
   {
-    "model": "RouterModel123",
-    "firmwareVersion": "1.0.0",
-    "macAddress": "AA:BB:CC:DD:EE:FF",
-    "serialNumber": "SN123456789",
-    "uptime": "48 hours"
+    "wifiSettings": {
+      "enabled": true,
+      "ssid": "Home_Network",
+      "securityType": "WPA2",
+      "channel": 6,
+      "frequency": "2.4GHz"
+    },
+    "networkSettings": {
+      "ipAddress": "192.168.1.1",
+      "subnetMask": "255.255.255.0",
+      "gateway": "192.168.1.1",
+      "primaryDNS": "8.8.8.8",
+      "secondaryDNS": "8.8.4.4"
+    },
+    "securitySettings": {
+      "firewallEnabled": false,
+      "vpnEnabled": false,
+      "parentalControlsEnabled": false
+    },
+    "connectedDevices": [
+      {
+        "id": 1,
+        "name": "Living Room TV",
+        "macAddress": "AA:BB:CC:DD:EE:FF",
+        "ipAddress": "192.168.1.100",
+        "connectionType": "Wireless"
+      },
+      {
+        "id": 2,
+        "name": "John's Laptop",
+        "macAddress": "11:22:33:44:55:66",
+        "ipAddress": "192.168.1.101",
+        "connectionType": "Wireless"
+      },
+      {
+        "id": 3,
+        "name": "Network Printer",
+        "macAddress": "AA:11:BB:22:CC:33",
+        "ipAddress": "192.168.1.102",
+        "connectionType": "Wired"
+      }
+    ]
   }
   ```
 

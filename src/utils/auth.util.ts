@@ -17,7 +17,7 @@ export class RouterAuth {
       }
 
       const response = await axios.post(
-        `https://${routerCredentials.ipAddress}${config.router.loginEndpoint}`,
+        `http://${routerCredentials.ipAddress}${config.router.loginEndpoint}`,
         {
           username: routerCredentials.username,
           password: routerCredentials.password

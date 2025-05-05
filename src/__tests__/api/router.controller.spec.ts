@@ -23,11 +23,26 @@ describe('RouterController', () => {
   describe('getStatus', () => {
     it('should return router status on success', async () => {
       const routerStatus = {
-        model: 'RouterModel123',
-        firmwareVersion: '1.0.0',
-        macAddress: 'AA:BB:CC:DD:EE:FF',
-        serialNumber: 'SN123456789',
-        uptime: '48 hours'
+        wifiSettings: {
+          enabled: true,
+          ssid: 'TestWiFi',
+          securityType: 'WPA2',
+          channel: 6,
+          frequency: '2.4GHz'
+        },
+        networkSettings: {
+          ipAddress: '192.168.1.1',
+          subnetMask: '255.255.255.0',
+          gateway: '192.168.1.1',
+          primaryDNS: '8.8.8.8',
+          secondaryDNS: '8.8.4.4'
+        },
+        securitySettings: {
+          firewallEnabled: true,
+          vpnEnabled: false,
+          parentalControlsEnabled: false
+        },
+        connectedDevices: []
       }
 
       jest
