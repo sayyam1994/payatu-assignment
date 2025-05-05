@@ -1,14 +1,3 @@
-/**
- * IMPORTANT DISCLAIMER:
- *
- * This router service is based on assumptions about router REST APIs.
- * The endpoints, authentication methods, and response structures are hypothetical
- * as they were created without access to a real router supporting REST APIs for configuration.
- *
- * For using this code with real router, these methods would need to be updated to match
- * the actual API specifications of the router being used.
- */
-
 import axios, { AxiosError } from 'axios'
 import { RouterAuth } from '../../utils/auth.util'
 import { RouterStatus, RouterResponse } from '../../interfaces/router.interface'

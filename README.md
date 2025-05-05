@@ -2,12 +2,6 @@
 
 A Node.js API written in TypeScript that interacts with your home router to fetch information and manage settings.
 
-## Important Note
-
-My router did not have API endpoints to configure it, so I was unable to test the APIs with a real router. For testing purposes, you need to add your own router's API endpoints in the `.env` file to test this application with a real router.
-
-Please be aware that since I couldn't test with actual hardware, some of the API endpoints implemented in this application are based on guesses and may differ from your router's actual APIs. You might need to modify the code to match your specific router's API specifications.
-
 ## Features
 
 - **Router Status Retrieval**: Fetch information about your router including model, firmware version, MAC address, serial number, and uptime.
