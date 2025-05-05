@@ -7,7 +7,7 @@ export const config = {
   router: {
     username: process.env.ROUTER_USERNAME || 'admin',
     password: process.env.ROUTER_PASSWORD || 'admin',
-    ipAddress: process.env.ROUTER_IP_ADDRESS || '192.168.1.1',
+    ipAddress: process.env.ROUTER_IP_ADDRESS || 'wifi-admin.netlify.app',
     loginEndpoint: process.env.LOGIN_ENDPOINT || '/api/login',
     statusEndpoint: process.env.STATUS_ENDPOINT || '/api/router-config',
     wifiEndpoint: process.env.WIFI_ENDPOINT || '/api/toggle-wifi',
