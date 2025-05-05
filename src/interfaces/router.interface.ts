@@ -1,9 +1,39 @@
 export interface RouterStatus {
-  model: string
-  firmwareVersion: string
+  wifiSettings: {
+    enabled: boolean
+    ssid: string
+    // password: string // Intentionally omitted for security
+    securityType: string
+    channel: number
+    frequency: string
+  }
+  networkSettings: {
+    ipAddress: string
+    subnetMask: string
+    gateway: string
+    primaryDNS: string
+    secondaryDNS: string
+  }
+  securitySettings: {
+    firewallEnabled: boolean
+    vpnEnabled: boolean
+    parentalControlsEnabled: boolean
+  }
+  connectedDevices: {
+    id: number
+    name: string
+    macAddress: string
+    ipAddress: string
+    connectionType: string
+  }[]
+}
+
+export interface ConnectedDevice {
+  id: number
+  name: string
   macAddress: string
-  serialNumber: string
-  uptime: string
+  ipAddress: string
+  connectionType: string
 }
 
 export interface RouterResponse {

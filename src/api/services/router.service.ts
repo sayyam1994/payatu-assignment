@@ -24,7 +24,7 @@ export class RouterService {
       const routerIp = config.router.ipAddress
 
       const response = await axios.get(
-        `http://${routerIp}${config.router.statusEndpoint}`,
+        `https://${routerIp}${config.router.statusEndpoint}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -33,12 +33,31 @@ export class RouterService {
       )
 
       if (response.data) {
+        const fullRouterStatus = response.data
+
         return {
-          model: response.data.model,
-          firmwareVersion: response.data.firmwareVersion,
-          macAddress: response.data.macAddress,
-          serialNumber: response.data.serialNumber,
-          uptime: response.data.uptime
+          wifiSettings: {
+            enabled: fullRouterStatus.wifiSettings.enabled,
+            ssid: fullRouterStatus.wifiSettings.ssid,
+            securityType: fullRouterStatus.wifiSettings.securityType,
+            channel: fullRouterStatus.wifiSettings.channel,
+            frequency: fullRouterStatus.wifiSettings.frequency
+            // Note: password is intentionally omitted
+          },
+          networkSettings: {
+            ipAddress: fullRouterStatus.networkSettings.ipAddress,
+            subnetMask: fullRouterStatus.networkSettings.subnetMask,
+            gateway: fullRouterStatus.networkSettings.gateway,
+            primaryDNS: fullRouterStatus.networkSettings.primaryDNS,
+            secondaryDNS: fullRouterStatus.networkSettings.secondaryDNS
+          },
+          securitySettings: {
+            firewallEnabled: fullRouterStatus.securitySettings.firewallEnabled,
+            vpnEnabled: fullRouterStatus.securitySettings.vpnEnabled,
+            parentalControlsEnabled:
+              fullRouterStatus.securitySettings.parentalControlsEnabled
+          },
+          connectedDevices: fullRouterStatus.connectedDevices || []
         }
       }
 
@@ -65,15 +84,41 @@ export class RouterService {
   }
 
   /**
+   * Get the current WiFi status
+   */
+  public static async getWifiStatus(): Promise<boolean> {
+    try {
+      const routerStatus = await this.getRouterStatus()
+      return routerStatus.wifiSettings.enabled
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error fetching WiFi status:', error)
+        throw new Error(`Failed to get WiFi status: ${error.message}`)
+      } else {
+        console.error('Unknown error fetching WiFi status:', error)
+        throw new Error('Failed to get WiFi status: Unknown error')
+      }
+    }
+  }
+
+  /**
    * Enable WiFi on the router
    */
   public static async enableWifi(): Promise<RouterResponse> {
     try {
+      const isEnabled = await this.getWifiStatus()
+      if (isEnabled) {
+        return {
+          success: true,
+          message: 'WiFi is already enabled'
+        }
+      }
+
       const token = await RouterAuth.getAuthToken()
       const routerIp = config.router.ipAddress
 
       const response = await axios.post(
-        `http://${routerIp}${config.router.wifiEndpoint}/enable`,
+        `http://${routerIp}${config.router.wifiEndpoint}`,
         {},
         {
           headers: {
@@ -104,11 +149,20 @@ export class RouterService {
    */
   public static async disableWifi(): Promise<RouterResponse> {
     try {
+      const isEnabled = await this.getWifiStatus()
+
+      if (!isEnabled) {
+        return {
+          success: true,
+          message: 'WiFi is already disabled'
+        }
+      }
+
       const token = await RouterAuth.getAuthToken()
       const routerIp = config.router.ipAddress
 
       const response = await axios.post(
-        `http://${routerIp}${config.router.wifiEndpoint}/disable`,
+        `http://${routerIp}${config.router.wifiEndpoint}`,
         {},
         {
           headers: {
@@ -135,15 +189,42 @@ export class RouterService {
   }
 
   /**
+   * Get the current firewall status
+   */
+  public static async getFirewallStatus(): Promise<boolean> {
+    try {
+      const routerStatus = await this.getRouterStatus()
+      return routerStatus.securitySettings.firewallEnabled
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error fetching firewall status:', error)
+        throw new Error(`Failed to get firewall status: ${error.message}`)
+      } else {
+        console.error('Unknown error fetching firewall status:', error)
+        throw new Error('Failed to get firewall status: Unknown error')
+      }
+    }
+  }
+
+  /**
    * Enable firewall on the router
    */
   public static async enableFirewall(): Promise<RouterResponse> {
     try {
+      const isEnabled = await this.getFirewallStatus()
+
+      if (isEnabled) {
+        return {
+          success: true,
+          message: 'Firewall is already enabled'
+        }
+      }
+
       const token = await RouterAuth.getAuthToken()
       const routerIp = config.router.ipAddress
 
       const response = await axios.post(
-        `http://${routerIp}${config.router.firewallEndpoint}/enable`,
+        `http://${routerIp}${config.router.firewallEndpoint}`,
         {},
         {
           headers: {
@@ -174,11 +255,20 @@ export class RouterService {
    */
   public static async disableFirewall(): Promise<RouterResponse> {
     try {
+      const isEnabled = await this.getFirewallStatus()
+
+      if (!isEnabled) {
+        return {
+          success: true,
+          message: 'Firewall is already disabled'
+        }
+      }
+
       const token = await RouterAuth.getAuthToken()
       const routerIp = config.router.ipAddress
 
       const response = await axios.post(
-        `http://${routerIp}${config.router.firewallEndpoint}/disable`,
+        `http://${routerIp}${config.router.firewallEndpoint}`,
         {},
         {
           headers: {
@@ -215,7 +305,7 @@ export class RouterService {
       const routerIp = config.router.ipAddress
 
       const response = await axios.post(
-        `http://${routerIp}${config.router.passwordEndpoint}/change`,
+        `http://${routerIp}${config.router.passwordEndpoint}`,
         {
           newPassword
         },
@@ -235,7 +325,17 @@ export class RouterService {
     } catch (error) {
       console.error('Error changing password:', error)
 
-      if (error instanceof Error) {
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError
+        if (error.response?.data?.message) {
+          console.error('Error changing password:', error.response.data.message)
+          throw new Error(
+            `Failed to change password: ${error.response.data.message}`
+          )
+        }
+
+        throw new Error(`Failed to change password: ${axiosError.message}`)
+      } else if (error instanceof Error) {
         console.error('Error changing password:', error)
         throw new Error(`Failed to change password: ${error.message}`)
       } else {

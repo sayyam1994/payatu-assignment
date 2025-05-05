@@ -91,7 +91,7 @@ export class RouterController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { newPassword } = req.body
+      const { newPassword } = req.body || {}
 
       if (!newPassword) {
         res.status(400).json({

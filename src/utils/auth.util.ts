@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { RouterCredentials } from '../interfaces/router.interface'
 import { config } from '../config/config'
 
@@ -17,7 +17,7 @@ export class RouterAuth {
       }
 
       const response = await axios.post(
-        `http://${routerCredentials.ipAddress}${config.router.loginEndpoint}`,
+        `https://${routerCredentials.ipAddress}${config.router.loginEndpoint}`,
         {
           username: routerCredentials.username,
           password: routerCredentials.password

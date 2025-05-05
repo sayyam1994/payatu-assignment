@@ -121,3 +121,5 @@ public
 .dockerignore
 Dockerfile
 docker-compose.yml
+
+payatu-assignment.zip
